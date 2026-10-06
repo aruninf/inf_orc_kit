@@ -24,6 +24,7 @@ The demo includes 4 examples:
 
 - **Native OCR Engine**: Uses Apple Vision (iOS) and Google ML Kit (Android) for text recognition
 - **Layout Detection**: ONNX-based document layout analysis (PP-Layout model) to identify tables, text blocks, titles, and figures
+- **Document Capture (pure Dart, no native deps)**: `DocumentQuad`, perspective homography, quality gates, and auto-capture session — extractable as its own pub
 - **Edge AI**: All processing runs locally on device - no internet required
 - **Cross-platform**: Supports both iOS and Android
 
@@ -40,9 +41,7 @@ The demo includes 4 examples:
 
 ```yaml
 dependencies:
-  flutter_ocr_kit:
-    git:
-      url: https://github.com/robert008/flutter_ocr_kit.git
+  flutter_ocr_kit: ^1.0.0
 ```
 
 ### 2. Download AI Model
@@ -248,7 +247,33 @@ android/
 | `init(modelPath)` | Initialize ONNX layout model |
 | `detectLayout(imagePath)` | Detect document layout regions |
 | `recognizeNative(imagePath)` | OCR using native engine (Vision/ML Kit) |
-| `recognizeFromFile(imagePath)` | OCR using ONNX model (backup) |
+| `recognizeText(imagePath)` | OCR using ONNX model (requires `initOcr`) |
+| `releaseLayout()` / `releaseOcr()` | Free native model memory |
+
+### Document Capture (pure Dart)
+
+| Class | Description |
+|-------|-------------|
+| `DocumentQuad` | 4-corner doc polygon: area, coverage, convexity, smoothing |
+| `Perspective` | Homography + `destinationSize` + inverse mapping for OCR boxes |
+| `CapturePolicy` | Quality gates: coverage, skew, motion, blur |
+| `DocCaptureSession` | `searching → stabilizing → ready → captured` auto-capture FSM |
+
+```dart
+import 'package:flutter_ocr_kit/flutter_ocr_kit.dart';
+
+final session = DocCaptureSession(steadyFramesRequired: 8);
+
+// Per camera frame (wire your own detector: ML Kit, Vision, contours):
+final state = session.onFrame(detectedQuad, imageSize);
+if (state == CaptureState.ready) {
+  final quad = session.quad!;
+  final dst = Perspective.destinationSize(quad);
+  final h = Perspective.homography(quad, dst);
+  // warp pixels to dst, then: await OcrKit.recognizeNative(croppedPath);
+  session.markCaptured();
+}
+```
 
 ### OcrResult
 
@@ -309,13 +334,16 @@ flutter analyze
 
 ## Author
 
-**Robert Chuang**
+**Robert Chuang** (original author)
 - Email: figo007007@gmail.com
 - LinkedIn: https://www.linkedin.com/in/robert-chuang-88090932b
 
+**Arun Infinity** (maintainer of [`inf_orc_kit`](https://github.com/aruninf/inf_orc_kit) fork)
+- GitHub: https://github.com/aruninf
+
 ## License
 
-MIT License
+Apache License 2.0 (see LICENSE)
 
 ## Related Projects
 
