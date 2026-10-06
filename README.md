@@ -1,32 +1,32 @@
 # inf_orc_kit
 
-A Flutter FFI plugin for OCR (Optical Character Recognition) with Edge AI support. Runs AI inference directly on mobile devices using ONNX Runtime and native OCR engines.
+On-device document AI for Flutter: snap a document, extract its text, understand its layout. Everything runs locally on the phone — no server, no internet needed.
 
-## Screenshots
-
-<p align="center">
-  <img src="screenshots/search.png" width="250" alt="Real-time Text Search"/>
-  <img src="screenshots/invoice.png" width="250" alt="Invoice Scanner"/>
-  <img src="screenshots/quotation.png" width="250" alt="Quotation Scanner"/>
-</p>
+What it does:
+- **Reads text from photos** — uses the phone's built-in OCR (Apple Vision on iOS, Google ML Kit on Android), with word-level bounding boxes and confidence scores.
+- **Understands page layout** — an ONNX model finds tables, text blocks, titles, figures and headers so you can OCR just the region you care about.
+- **Captures clean document shots** — pure-Dart helpers for document corners (`DocumentQuad`), perspective straightening (homography), shot-quality checks (coverage, skew, steadiness) and an auto-capture state machine.
+- **Pulls out key facts** — generic extractors for dates, phone numbers, amounts, emails, URLs and label→value pairs (e.g. "Total" → "$42.50") without any cloud service.
 
 ## Demo Video
 
 [![Demo Video](https://img.youtube.com/vi/s70GC92Ir4Q/maxresdefault.jpg)](https://www.youtube.com/watch?v=s70GC92Ir4Q)
 
-The demo includes 4 examples:
+The demo includes 3 examples:
 1. **Real-time text search** - Find specific text strings in camera view
 2. **Real-time KIE** - Extract specific types (dates, phone numbers, amounts)
-3. **Invoice scanner** - Scan Taiwan e-invoices and extract invoice number, date, amount
-4. **Quotation scanner** - Scan custom delivery notes with Layout Detection + OCR to extract items, prices, totals
+3. **Doc scan** - Pick a photo, drag corners to the edges, enhance, OCR
+
+> Screenshots and branding are being refreshed for `inf_orc_kit`.
 
 ## Features
 
-- **Native OCR Engine**: Uses Apple Vision (iOS) and Google ML Kit (Android) for text recognition
-- **Layout Detection**: ONNX-based document layout analysis (PP-Layout model) to identify tables, text blocks, titles, and figures
-- **Document Capture (pure Dart, no native deps)**: `DocumentQuad`, perspective homography, quality gates, and auto-capture session — extractable as its own pub
-- **Edge AI**: All processing runs locally on device - no internet required
-- **Cross-platform**: Supports both iOS and Android
+- **Native OCR Engine**: Apple Vision (iOS) and Google ML Kit (Android) for text recognition with bounding boxes and confidence scores — no model download needed
+- **Layout Detection**: ONNX-based document layout analysis to identify tables, text blocks, titles, and figures
+- **Document Capture (pure Dart, no native deps)**: `DocumentQuad` corner model, perspective homography, quality gates (coverage/skew/motion), and `DocCaptureSession` auto-capture FSM
+- **Key Information Extraction**: generic regex, spatial (label→value) and layout-region extractors
+- **Edge AI**: all processing runs locally on device — no internet required
+- **Cross-platform**: iOS and Android
 
 ## Supported Platforms
 
@@ -37,26 +37,64 @@ The demo includes 4 examples:
 
 ## Installation
 
-### 1. Add Dependency
+Takes about 2 minutes. No API keys, no accounts, no cloud setup.
+
+### 1. Add the package
+
+```bash
+dart pub add inf_orc_kit
+```
+
+or manually in `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_ocr_kit: ^1.0.0
+  inf_orc_kit: ^1.2.0
 ```
 
-### 2. Download AI Model
+Then import one file — everything is exported from the barrel:
 
-Download the ONNX model from [GitHub Releases](https://github.com/aruninf/inf_orc_kit/releases):
+```dart
+import 'package:inf_orc_kit/inf_orc_kit.dart';
+```
+
+### 2. Platform setup (required for camera + gallery)
+
+**iOS** — `ios/Runner/Info.plist`:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Scan documents and recognize text.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Pick document images for OCR.</string>
+```
+
+Then:
+
+```bash
+cd ios && pod install
+```
+
+**Android** — `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
+```
+
+Requires `minSdk 21+`. No Gradle changes needed.
+
+### 3. Layout model (optional — only for table/region detection)
+
+Plain OCR and document capture need **no model**. Only download this if you use `OcrKit.detectLayout`:
 
 | Model | Size | Description |
 |-------|------|-------------|
 | pp_doclayout_l.onnx | 123 MB | Layout detection model |
 
-**Steps:**
-
-1. Create `assets/` folder in your project root
-2. Download the model file and place it in `assets/`
-3. Register in `pubspec.yaml`:
+Get it from [GitHub Releases](https://github.com/aruninf/inf_orc_kit/releases), put it in `assets/`, and register it:
 
 ```yaml
 flutter:
@@ -64,29 +102,59 @@ flutter:
     - assets/pp_doclayout_l.onnx
 ```
 
-### 3. Platform Setup
+## Integrate in 5 minutes
 
-**iOS**: Run `pod install` in your iOS directory. The native libraries will be downloaded automatically.
-
-**Android**: The native libraries are bundled with the package.
-
-## Quick Start
-
-### Basic OCR
+### Recipe 1 — Read text from a photo (1 line)
 
 ```dart
-import 'package:flutter_ocr_kit/flutter_ocr_kit.dart';
+import 'package:inf_orc_kit/inf_orc_kit.dart';
 
-// Recognize text from image file
-final result = await OcrKit.recognizeNative('/path/to/image.jpg');
+// Vision on iOS, ML Kit on Android. No init, no model.
+final result = await DocOcr.read('/path/to/image.jpg');
 
-print('Full text: ${result.fullText}');
+print(result.fullText);
 for (final line in result.textLines) {
   print('${line.text} (confidence: ${line.score})');
 }
 ```
 
-### Layout Detection
+### Recipe 2 — Scan a document (adjust → enhance → OCR)
+
+```dart
+// 1. Find corners (swap in your ML Kit / Vision detector later)
+final quad = await const FullFrameEdgeDetector()
+    .detect(imageSize: imageSize, imageBytes: bytes);
+
+// 2. Let the user drag corners, then straighten + clean
+QuadEditor( // a widget: pass your Image as `child`
+  imageSize: imageSize,
+  quad: quad,
+  onChanged: (q) => setState(() => quad = q),
+);
+final warped = warpQuadToRect(bytes, quad);
+final clean = enhanceImage(
+  warped, options: EnhanceOptions.preset(EnhancePreset.receipt));
+
+// 3. Multi-page session + batch OCR with progress
+session.addPage(savedPath, quad: quad);
+final texts = await DocOcr.readAll(
+  session.exportPaths(),
+  onProgress: (done, total) => setState(() => progress = done / total),
+);
+```
+
+### Recipe 3 — Pull out key facts
+
+```dart
+final kie = SimpleKieExtractor().extract(result);
+for (final e in kie.entities) {
+  print('${e.type.label}: ${e.value}');
+}
+// Label → value pairs, e.g. "Total" → "$42.50":
+final spatial = SpatialKieExtractor().extract(result);
+```
+
+### Layout Detection (opt-in)
 
 ```dart
 // Initialize layout model
@@ -129,7 +197,7 @@ for (final table in tableRegions) {
 
 ## Example App
 
-The example app includes 4 tabs demonstrating different use cases:
+The example app includes 3 tabs demonstrating different use cases:
 
 ### Tab 1: OCR
 
@@ -144,48 +212,33 @@ Simple regex-based entity extraction:
 - Extract dates, amounts, phone numbers from OCR results
 - Demonstrates how to post-process OCR output
 
-### Tab 3: Invoice Scanner
+### Tab 3: Scan (pick → adjust → enhance → OCR)
 
-**Taiwan e-invoice scanner demo:**
-- Real-time camera scanning
-- Extracts invoice number (XX-12345678 format)
-- Extracts amount and period
-- Auto-deduplication by invoice number
+End-to-end document flow:
+- Pick a photo, auto-placed corners via `FullFrameEdgeDetector`
+- Drag corners with `QuadEditor`, straighten + clean with `warpQuadToRect` / `enhanceImage`
+- Collect pages in `DocSession`, read them with `DocOcr.readAll`
 
-> **Important**: This is a **specialized demo** for Taiwan e-invoice format. It demonstrates how to combine real-time OCR with custom extraction logic. You will need to modify the extraction rules (`invoice_extractor.dart`) for your own document format.
+```dart
+// 1. Detect (swap in your ML Kit / Vision detector later)
+final quad = await const FullFrameEdgeDetector()
+    .detect(imageSize: imageSize, imageBytes: bytes);
 
-### Tab 4: Quotation Scanner
+// 2. Let the user adjust, then straighten + clean
+final warped = warpQuadToRect(bytes, quad);
+final clean = enhanceImage(
+    warped, options: EnhanceOptions.preset(EnhancePreset.receipt));
 
-**Quotation/delivery note scanner demo:**
-- Uses Layout Detection to find Table regions
-- Runs OCR within detected regions
-- Extracts quotation number, date, customer, items, and totals
-- Supports both photo mode and real-time camera mode
-
-> **Important**: This is a **specialized demo** for a specific quotation format. It demonstrates how to combine Layout Detection + OCR for structured document extraction. The extraction logic (`quotation_extractor.dart`) is tailored for the demo documents and will need customization for your own document format.
-
-### Demo Files
-
-Editable demo files are provided for testing and customization:
-
+// 3. Multi-page + OCR
+session.addPage(savedPath, quad: quad);
+final texts = await DocOcr.readAll(session.exportPaths());
 ```
-example/assets/demo/
-  invoices/              # Sample Taiwan e-invoice images
-    invoice_1.jpg
-    invoice_2.jpg
-    invoice_3.jpg
-  quotations/            # Sample quotation PDFs (editable)
-    宏達科技_出貨單_HD-2024120001.pdf
-    宏達科技_出貨單_HD-2024120015.pdf
-```
-
-You can modify the PDF files to test with your own data, then convert to images for scanning.
 
 ## How to Build Your Own Document Scanner
 
-The Invoice and Quotation demos show the pattern for building custom document scanners:
+The KIE demo shows the pattern for building custom document scanners:
 
-1. **Define your extraction rules** - Create an extractor class (see `invoice_extractor.dart` or `quotation_extractor.dart`)
+1. **Define your extraction rules** - Create an extractor class (see `kie_extractor.dart`: `SimpleKieExtractor`, `SpatialKieExtractor`, `LayoutKieExtractor`)
 
 2. **Use regex patterns** - Define patterns for the fields you want to extract:
 ```dart
@@ -210,12 +263,18 @@ final reliableText = ocrResult.textLines.where((line) => line.score > 0.8);
 
 ```
 lib/
-  flutter_ocr_kit.dart              # Main API (OcrKit class)
+  inf_orc_kit.dart                  # Barrel: exports the whole public API
   src/
+    ocr/ocr_kit.dart                # OcrKit: native OCR + layout detection
     models.dart                     # Data models (TextLine, OcrResult, LayoutResult)
     ocr_service.dart                # Async OCR service with isolate support
-    invoice_extractor.dart          # Taiwan e-invoice extraction (demo)
-    quotation_extractor.dart        # Quotation extraction (demo)
+    kie_extractor.dart              # Key information extraction (regex + spatial + layout)
+    capture/                        # Pure-Dart document capture (quad, perspective, quality, session)
+    adjust/quad_editor.dart         # Drag-to-adjust corner overlay widget
+    enhance/enhance.dart            # Perspective warp + clean-up presets
+    pages/doc_session.dart          # Multi-page scan session
+    ocr/doc_ocr.dart                # Slim OCR facade with batch + progress
+    core/doc_page.dart              # Single scanned-page model
 
 src/                                # Native C++ code (FFI)
   native_lib.cpp                    # FFI exported functions
@@ -260,7 +319,7 @@ android/
 | `DocCaptureSession` | `searching → stabilizing → ready → captured` auto-capture FSM |
 
 ```dart
-import 'package:flutter_ocr_kit/flutter_ocr_kit.dart';
+import 'package:inf_orc_kit/inf_orc_kit.dart';
 
 final session = DocCaptureSession(steadyFramesRequired: 8);
 
@@ -334,18 +393,12 @@ flutter analyze
 
 ## Author
 
-**Robert Chuang** (original author)
-- Email: figo007007@gmail.com
-- LinkedIn: https://www.linkedin.com/in/robert-chuang-88090932b
-
-**Arun Infinity** (maintainer of [`inf_orc_kit`](https://github.com/aruninf/inf_orc_kit) fork)
+**Arun Infinity**
 - GitHub: https://github.com/aruninf
+- Project: https://github.com/aruninf/inf_orc_kit
+
+Based on `flutter_ocr_kit` by Robert Chuang.
 
 ## License
 
 Apache License 2.0 (see LICENSE)
-
-## Related Projects
-
-- [flutter_document_capture](https://github.com/robert008/flutter_document_capture) - Document capture preprocessing (corner detection, perspective correction)
-- [flutter_doclayout_kit](https://github.com/robert008/flutter_doclayout_kit) - Document layout detection plugin

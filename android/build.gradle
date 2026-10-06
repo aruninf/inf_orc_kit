@@ -1,6 +1,6 @@
 // The Android Gradle Plugin builds the native code with the Android NDK.
 
-group = "com.robert008.flutter_ocr_kit"
+group = "com.aruninf.inf_orc_kit"
 version = "1.0"
 
 buildscript {
@@ -58,7 +58,7 @@ task downloadNativeLibraries {
 preBuild.dependsOn downloadNativeLibraries
 
 android {
-    namespace = "com.robert008.flutter_ocr_kit"
+    namespace = "com.aruninf.inf_orc_kit"
 
     compileSdk = 35
 

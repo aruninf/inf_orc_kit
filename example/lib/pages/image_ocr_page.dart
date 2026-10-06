@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'package:flutter_ocr_kit/flutter_ocr_kit.dart';
+import 'package:inf_orc_kit/inf_orc_kit.dart';
 
 import '../painters/image_ocr_overlay_painter.dart';
 

@@ -4,7 +4,7 @@ description: |
   Bindings for OCR native library.
 
   Regenerate bindings with `dart run ffigen --config ffigen.yaml`.
-output: 'lib/flutter_ocr_kit_bindings_generated.dart'
+output: 'lib/inf_orc_kit_bindings_generated.dart'
 headers:
   entry-points:
     - 'src/native_lib.cpp'

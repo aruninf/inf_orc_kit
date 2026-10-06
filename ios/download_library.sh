@@ -4,7 +4,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_FILE="$SCRIPT_DIR/libflutter_ocr_kit.a"
 # TODO: Update version and download URL when publishing
 VERSION="v1.0.0"
-DOWNLOAD_URL="https://github.com/example/flutter_ocr_kit/releases/download/${VERSION}/libflutter_ocr_kit.a"
+DOWNLOAD_URL="https://github.com/aruninf/inf_orc_kit/releases/download/${VERSION}/libflutter_ocr_kit.a"
 
 if [ -f "$LIB_FILE" ]; then
     echo "iOS library already exists: $LIB_FILE"

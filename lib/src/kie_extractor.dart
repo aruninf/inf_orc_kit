@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+import 'dart:ui';
+
 import 'models.dart';
 
 /// Entity types for KIE extraction
 enum EntityType {
   date,
   time,
-  phoneMobileTw,
-  phoneLandlineTw,
+  phone,
   email,
   currencyAmount,
   percentage,
@@ -22,10 +22,8 @@ extension EntityTypeExtension on EntityType {
         return 'DATE';
       case EntityType.time:
         return 'TIME';
-      case EntityType.phoneMobileTw:
-        return 'MOBILE';
-      case EntityType.phoneLandlineTw:
-        return 'LANDLINE';
+      case EntityType.phone:
+        return 'PHONE';
       case EntityType.email:
         return 'EMAIL';
       case EntityType.currencyAmount:
@@ -42,23 +40,21 @@ extension EntityTypeExtension on EntityType {
   Color get color {
     switch (this) {
       case EntityType.date:
-        return Colors.blue;
+        return const Color(0xFF2196F3);
       case EntityType.time:
-        return Colors.indigo;
-      case EntityType.phoneMobileTw:
-        return Colors.green;
-      case EntityType.phoneLandlineTw:
-        return Colors.teal;
+        return const Color(0xFF3F51B5);
+      case EntityType.phone:
+        return const Color(0xFF4CAF50);
       case EntityType.email:
-        return Colors.orange;
+        return const Color(0xFFFF9800);
       case EntityType.currencyAmount:
-        return Colors.red;
+        return const Color(0xFFF44336);
       case EntityType.percentage:
-        return Colors.purple;
+        return const Color(0xFF9C27B0);
       case EntityType.url:
-        return Colors.cyan;
+        return const Color(0xFF00BCD4);
       case EntityType.ipAddress:
-        return Colors.brown;
+        return const Color(0xFF795548);
     }
   }
 }
@@ -127,14 +123,10 @@ class SimpleKieExtractor {
   static final _datePatterns = [
     // ISO format: 2024-01-15, 2024/01/15, 2024.01.15
     RegExp(r'\b\d{4}[-/\.]\d{1,2}[-/\.]\d{1,2}\b'),
-    // Chinese format: 2024年1月15日
-    RegExp(r'\b\d{4}年\d{1,2}月\d{1,2}日\b'),
     // US format: 01/15/2024, 01-15-2024
     RegExp(r'\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b'),
     // Short format: 01/15/24
     RegExp(r'\b\d{1,2}[-/]\d{1,2}[-/]\d{2}\b'),
-    // Chinese short: 1月15日
-    RegExp(r'\b\d{1,2}月\d{1,2}日\b'),
   ];
 
   // ============================================
@@ -145,29 +137,16 @@ class SimpleKieExtractor {
     RegExp(r'\b([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?\b'),
     // 12-hour format: 2:30 PM, 2:30PM
     RegExp(r'\b(1[0-2]|0?[1-9]):[0-5]\d\s*[APap][Mm]\b'),
-    // Chinese format: 下午2點30分
-    RegExp(r'[上下]午\d{1,2}[點时]\d{0,2}分?'),
   ];
 
   // ============================================
-  // Taiwan Mobile Phone: 09xx-xxx-xxx
+  // Phone numbers (international / NANP style)
   // ============================================
-  static final _phoneMobileTwPatterns = [
-    // With separators: 0912-345-678, 0912 345 678
-    RegExp(r'\b09\d{2}[-\s]?\d{3}[-\s]?\d{3}\b'),
-    // International: +886 912 345 678
-    RegExp(r'\+886[-\s]?9\d{2}[-\s]?\d{3}[-\s]?\d{3}\b'),
-  ];
-
-  // ============================================
-  // Taiwan Landline: (0x) xxxx-xxxx
-  // ============================================
-  static final _phoneLandlineTwPatterns = [
-    // Taipei: (02) 2345-6789, 02-2345-6789
-    RegExp(r'\(0[2-8]\)[-\s]?\d{4}[-\s]?\d{4}\b'),
-    RegExp(r'\b0[2-8][-\s]?\d{4}[-\s]?\d{4}\b'),
-    // With area code: 04-2345-6789
-    RegExp(r'\b0[3-8][-\s]?\d{3,4}[-\s]?\d{4}\b'),
+  static final _phonePatterns = [
+    // International: +1 555 123 4567, +44 20 7946 0958
+    RegExp(r'\+\d{1,3}[-\s]?\(?\d{1,4}\)?[-\s]?\d{3,4}[-\s]?\d{3,4}\b'),
+    // NANP: (555) 123-4567, 555-123-4567, 555 123 4567
+    RegExp(r'\b\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}\b'),
   ];
 
   // ============================================
@@ -181,16 +160,9 @@ class SimpleKieExtractor {
   // Currency Amount
   // ============================================
   static final _currencyAmountPatterns = [
-    // NT$ or NTD format: NT$1,234.56, NTD 1,234
-    RegExp(r'NT\$?\s?[\d,]+\.?\d*'),
-    RegExp(r'NTD\s?[\d,]+\.?\d*'),
     // Dollar sign: $1,234.56
     RegExp(r'\$[\d,]+\.?\d*'),
-    // Chinese Yuan: ¥1,234
-    RegExp(r'¥[\d,]+\.?\d*'),
-    // With 元: 1,234元, 1234 元
-    RegExp(r'[\d,]+\.?\d*\s?元'),
-    // USD, EUR, etc.
+    // ISO codes: USD, EUR, GBP, JPY, CNY
     RegExp(r'(USD|EUR|JPY|GBP|CNY)\s?[\d,]+\.?\d*'),
   ];
 
@@ -200,8 +172,6 @@ class SimpleKieExtractor {
   static final _percentagePatterns = [
     // 12.5%, 100%
     RegExp(r'\b\d+\.?\d*\s?%'),
-    // Chinese: 百分之十二
-    RegExp(r'百分之[零一二三四五六七八九十百]+'),
   ];
 
   // ============================================
@@ -242,11 +212,8 @@ class SimpleKieExtractor {
       if (typesToExtract.contains(EntityType.time)) {
         entities.addAll(_extractFromLine(line, EntityType.time, _timePatterns));
       }
-      if (typesToExtract.contains(EntityType.phoneMobileTw)) {
-        entities.addAll(_extractFromLine(line, EntityType.phoneMobileTw, _phoneMobileTwPatterns));
-      }
-      if (typesToExtract.contains(EntityType.phoneLandlineTw)) {
-        entities.addAll(_extractFromLine(line, EntityType.phoneLandlineTw, _phoneLandlineTwPatterns));
+      if (typesToExtract.contains(EntityType.phone)) {
+        entities.addAll(_extractFromLine(line, EntityType.phone, _phonePatterns));
       }
       if (typesToExtract.contains(EntityType.email)) {
         entities.addAll(_extractFromLine(line, EntityType.email, _emailPatterns));
@@ -354,7 +321,7 @@ class LabelPattern {
     required this.name,
     required this.patterns,
     this.direction = SpatialDirection.right,
-    this.color = Colors.blue,
+    this.color = const Color(0xFF2196F3),
   });
 
   /// Check if text matches any pattern
@@ -423,58 +390,58 @@ class SpatialKieResult {
 class DefaultLabelPatterns {
   static const name = LabelPattern(
     name: 'NAME',
-    patterns: ['姓名', '收件人', '客戶', '名稱', '聯絡人', 'name', 'recipient'],
+    patterns: ['name', 'recipient', 'customer', 'contact', 'bill to', 'ship to'],
     direction: SpatialDirection.rightOrBelow,
-    color: Colors.blue,
+    color: Color(0xFF2196F3),
   );
 
   static const phone = LabelPattern(
     name: 'PHONE',
-    patterns: ['電話', '手機', '聯絡電話', 'tel', 'phone', 'mobile'],
+    patterns: ['tel', 'phone', 'mobile', 'fax', 'contact number'],
     direction: SpatialDirection.right,
-    color: Colors.green,
+    color: Color(0xFF4CAF50),
   );
 
   static const email = LabelPattern(
     name: 'EMAIL',
-    patterns: ['信箱', '郵件', 'email', 'e-mail', 'mail'],
+    patterns: ['email', 'e-mail', 'mail'],
     direction: SpatialDirection.right,
-    color: Colors.orange,
+    color: Color(0xFFFF9800),
   );
 
   static const address = LabelPattern(
     name: 'ADDRESS',
-    patterns: ['地址', '住址', '送貨地址', 'address'],
+    patterns: ['address', 'street', 'location'],
     direction: SpatialDirection.rightOrBelow,
-    color: Colors.purple,
+    color: Color(0xFF9C27B0),
   );
 
   static const date = LabelPattern(
     name: 'DATE',
-    patterns: ['日期', '發票日期', '交易日期', 'date'],
+    patterns: ['date', 'issued', 'due date', 'invoice date'],
     direction: SpatialDirection.right,
-    color: Colors.indigo,
+    color: Color(0xFF3F51B5),
   );
 
   static const amount = LabelPattern(
     name: 'AMOUNT',
-    patterns: ['金額', '總計', '合計', '應付', '小計', 'total', 'amount', 'subtotal'],
+    patterns: ['total', 'amount', 'subtotal', 'balance', 'due'],
     direction: SpatialDirection.right,
-    color: Colors.red,
+    color: Color(0xFFF44336),
   );
 
   static const invoiceNo = LabelPattern(
     name: 'INVOICE_NO',
-    patterns: ['發票號碼', '統一編號', '編號', 'invoice', 'no.', 'number'],
+    patterns: ['invoice', 'receipt', 'order', 'no.', 'number', '#'],
     direction: SpatialDirection.right,
-    color: Colors.teal,
+    color: Color(0xFF009688),
   );
 
   static const company = LabelPattern(
     name: 'COMPANY',
-    patterns: ['公司', '商店', '店名', 'company', 'store'],
+    patterns: ['company', 'store', 'vendor', 'from'],
     direction: SpatialDirection.rightOrBelow,
-    color: Colors.brown,
+    color: Color(0xFF795548),
   );
 
   static List<LabelPattern> get all => [

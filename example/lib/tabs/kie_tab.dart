@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter_ocr_kit/flutter_ocr_kit.dart';
+import 'package:inf_orc_kit/inf_orc_kit.dart';
 
 import '../pages/camera_kie_page.dart';
 import '../pages/image_kie_page.dart';

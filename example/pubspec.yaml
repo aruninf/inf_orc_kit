@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_ocr_kit:
+  inf_orc_kit:
     path: ../
 
   path_provider: ^2.1.0
@@ -59,14 +59,9 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/pp_doclayout_l.onnx
     - assets/test_1.jpg
     - assets/test_2.jpg
     - assets/test_3.png
-    - assets/quotation_1.png
-    - assets/quotation_2.png
-    - assets/quotation_3.png
-    - assets/demo/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

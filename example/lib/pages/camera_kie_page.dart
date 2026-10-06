@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
-import 'package:flutter_ocr_kit/flutter_ocr_kit.dart';
+import 'package:inf_orc_kit/inf_orc_kit.dart';
 
 import '../painters/kie_camera_overlay_painter.dart';
 

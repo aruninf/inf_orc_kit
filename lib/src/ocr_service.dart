@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 
-import '../flutter_ocr_kit_bindings_generated.dart';
+import '../inf_orc_kit_bindings_generated.dart';
 import 'models.dart';
 
 /// High-level OCR/Layout detection service with isolate support

@@ -47,5 +47,7 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>This app uses the camera to scan and recognize text in real-time.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo access to pick document images for OCR.</string>
 </dict>
 </plist>

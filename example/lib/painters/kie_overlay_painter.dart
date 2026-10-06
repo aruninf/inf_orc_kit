@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter_ocr_kit/flutter_ocr_kit.dart';
+import 'package:inf_orc_kit/inf_orc_kit.dart';
 
 /// KIE Overlay Painter
 class KieOverlayPainter extends CustomPainter {

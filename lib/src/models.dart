@@ -137,6 +137,9 @@ class OcrResult {
   bool get hasError => error != null;
   bool get isSuccess => error == null;
 
+  /// Alias kept for README / older code (`textLines` == [results]).
+  List<TextLine> get textLines => results;
+
   /// Get all recognized text as a single string
   String get fullText => results.map((r) => r.text).join('\n');
 
