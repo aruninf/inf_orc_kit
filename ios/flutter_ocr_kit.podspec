@@ -2,7 +2,7 @@ Pod::Spec.new do |s|
   s.name             = 'flutter_ocr_kit'
   s.version          = '1.0.0'
   s.summary          = 'OCR plugin for Flutter using ONNX Runtime and Apple Vision'
-  s.homepage         = 'https://github.com/robert008/flutter_ocr_kit'
+  s.homepage         = 'https://github.com/aruninf/inf_orc_kit'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'robert' => 'figo007007@gmail.com' }
   s.source           = { :path => '.' }

@@ -29,7 +29,7 @@ apply plugin: "kotlin-android"
 def jniLibsDir = file("src/main/jniLibs")
 def arm64Dir = file("src/main/jniLibs/arm64-v8a")
 def releaseVersion = "v1.0.0"
-def downloadUrl = "https://github.com/robert008/flutter_ocr_kit/releases/download/${releaseVersion}/jniLibs.zip"
+def downloadUrl = "https://github.com/aruninf/inf_orc_kit/releases/download/${releaseVersion}/jniLibs.zip"
 
 task downloadNativeLibraries {
     doLast {

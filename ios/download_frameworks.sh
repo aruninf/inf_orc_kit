@@ -2,7 +2,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION="v1.0.0"
-BASE_URL="https://github.com/robert008/flutter_ocr_kit/releases/download/${VERSION}"
+BASE_URL="https://github.com/aruninf/inf_orc_kit/releases/download/${VERSION}"
 
 # Check if frameworks already exist
 OPENCV_DIR="$SCRIPT_DIR/Frameworks/opencv2.framework"

@@ -1,4 +1,4 @@
-# Flutter OCR Kit
+# inf_orc_kit
 
 A Flutter FFI plugin for OCR (Optical Character Recognition) with Edge AI support. Runs AI inference directly on mobile devices using ONNX Runtime and native OCR engines.
 
@@ -46,7 +46,7 @@ dependencies:
 
 ### 2. Download AI Model
 
-Download the ONNX model from [GitHub Releases](https://github.com/robert008/flutter_ocr_kit/releases):
+Download the ONNX model from [GitHub Releases](https://github.com/aruninf/inf_orc_kit/releases):
 
 | Model | Size | Description |
 |-------|------|-------------|

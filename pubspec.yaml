@@ -1,9 +1,9 @@
 name: flutter_ocr_kit
 description: "A Flutter FFI plugin for OCR with Edge AI. Uses Apple Vision (iOS) / ML Kit (Android) for text recognition and ONNX Runtime for layout detection."
 version: 1.0.0
-homepage: https://github.com/robert008/flutter_ocr_kit
-repository: https://github.com/robert008/flutter_ocr_kit
-issue_tracker: https://github.com/robert008/flutter_ocr_kit/issues
+homepage: https://github.com/aruninf/inf_orc_kit
+repository: https://github.com/aruninf/inf_orc_kit
+issue_tracker: https://github.com/aruninf/inf_orc_kit/issues
 
 environment:
   sdk: ^3.7.2
@@ -24,7 +24,14 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.flutter_ocr_kit
+        package: com.robert008.flutter_ocr_kit
         pluginClass: FlutterOcrKitPlugin
       ios:
         ffiPlugin: true
+
+topics:
+  - ocr
+  - ml
+  - vision
+  - scanner
+  - document
